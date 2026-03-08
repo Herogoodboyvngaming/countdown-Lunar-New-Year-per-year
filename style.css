@@ -115,22 +115,32 @@ body {
     box-shadow: 0 8px 20px rgba(0,0,0,0.4);
 }
 
+/* Controls Bar - Đặt dưới title */
+.controls-bar {
+    position: relative;
+    z-index: 100;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 20px;
+    padding: 15px;
+    flex-wrap: wrap;
+    background: rgba(0,0,0,0.3);
+    border-bottom: 1px solid rgba(255,215,0,0.2);
+    backdrop-filter: blur(10px);
+}
+
 /* Ping Status */
 .ping-status {
-    position: fixed;
-    top: 20px;
-    left: 20px;
-    z-index: 1000;
-    background: rgba(0,0,0,0.7);
+    background: rgba(0,0,0,0.5);
     border: 2px solid #FFD700;
     border-radius: 50px;
-    padding: 10px 20px;
+    padding: 8px 16px;
     display: flex;
     align-items: center;
-    gap: 10px;
-    font-size: 0.9rem;
+    gap: 8px;
+    font-size: 0.85rem;
     color: #FFD700;
-    backdrop-filter: blur(10px);
     transition: all 0.3s ease;
 }
 
@@ -141,9 +151,9 @@ body {
 }
 
 .ping-spinner {
-    width: 20px;
-    height: 20px;
-    border: 3px solid rgba(255,215,0,0.3);
+    width: 16px;
+    height: 16px;
+    border: 2px solid rgba(255,215,0,0.3);
     border-top-color: #FFD700;
     border-radius: 50%;
     animation: spin 1s linear infinite;
@@ -166,30 +176,25 @@ body {
 
 /* Toggle Switch Nhạc */
 .music-toggle-container {
-    position: fixed;
-    top: 20px;
-    right: 20px;
-    z-index: 1001;
     display: flex;
     align-items: center;
-    gap: 10px;
-    background: rgba(0,0,0,0.7);
-    padding: 10px 15px;
+    gap: 8px;
+    background: rgba(0,0,0,0.5);
+    padding: 8px 16px;
     border-radius: 50px;
     border: 2px solid #FFD700;
-    backdrop-filter: blur(10px);
 }
 
 .toggle-label {
     color: #FFD700;
-    font-size: 0.9rem;
+    font-size: 0.85rem;
     font-weight: bold;
 }
 
 .toggle-switch {
     position: relative;
-    width: 70px;
-    height: 35px;
+    width: 60px;
+    height: 30px;
     cursor: pointer;
 }
 
@@ -206,20 +211,20 @@ body {
     right: 0;
     bottom: 0;
     background: linear-gradient(135deg, #444, #222);
-    border-radius: 35px;
+    border-radius: 30px;
     transition: 0.4s;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 0 10px;
+    padding: 0 8px;
     box-shadow: inset 0 2px 5px rgba(0,0,0,0.5);
 }
 
 .toggle-slider:before {
     position: absolute;
     content: "";
-    height: 27px;
-    width: 27px;
+    height: 22px;
+    width: 22px;
     left: 4px;
     bottom: 4px;
     background: linear-gradient(135deg, #FFD700, #FFA500);
@@ -234,11 +239,11 @@ body {
 }
 
 .toggle-switch input:checked + .toggle-slider:before {
-    transform: translateX(35px);
+    transform: translateX(30px);
 }
 
 .toggle-on, .toggle-off {
-    font-size: 0.7rem;
+    font-size: 0.65rem;
     font-weight: bold;
     z-index: 1;
     transition: 0.3s;
@@ -324,12 +329,12 @@ body {
     font-weight: bold;
 }
 
-/* Container và các phần còn lại */
+/* Container */
 .container {
     position: relative;
     z-index: 10;
-    min-height: calc(100vh - 80px);
-    min-height: calc(100dvh - 80px);
+    min-height: calc(100vh - 180px);
+    min-height: calc(100dvh - 180px);
     display: flex;
     flex-direction: column;
     justify-content: flex-start;
@@ -343,6 +348,7 @@ body {
     margin-bottom: clamp(15px, 4vw, 30px);
     animation: fadeInDown 1s ease-out;
     width: 100%;
+    margin-top: 10px;
 }
 
 h1 {
@@ -623,17 +629,28 @@ h1 {
 }
 
 @media (max-width: 768px) {
-    .music-toggle-container {
-        top: 70px;
-        right: 10px;
-        transform: scale(0.9);
+    .controls-bar {
+        padding: 10px;
+        gap: 10px;
     }
     
-    .ping-status {
-        top: 10px;
-        left: 10px;
-        font-size: 0.8rem;
-        padding: 8px 15px;
+    .ping-status, .music-toggle-container {
+        padding: 6px 12px;
+        font-size: 0.75rem;
+    }
+    
+    .toggle-switch {
+        width: 50px;
+        height: 26px;
+    }
+    
+    .toggle-slider:before {
+        height: 18px;
+        width: 18px;
+    }
+    
+    .toggle-switch input:checked + .toggle-slider:before {
+        transform: translateX(24px);
     }
     
     .footer-line {
