@@ -16,14 +16,35 @@
         <button class="popup-close" onclick="closePopup()">✕</button>
     </div>
 
-    <!-- YouTube Player ẩn hoàn toàn -->
+    <!-- Audio Player ẩn (Local MP3 dự phòng) -->
+    <audio id="localAudio" loop preload="auto">
+        <source src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" type="audio/mpeg">
+        <!-- Backup URL khác nếu cần -->
+    </audio>
+
+    <!-- YouTube Player ẩn -->
     <div id="youtube-player" class="hidden-player"></div>
     
+    <!-- Music Loading Indicator -->
+    <div id="musicLoading" class="music-loading" style="display: none;">
+        <div class="music-loading-spinner"></div>
+        <span>Đang tải nhạc...</span>
+        <div class="music-progress">
+            <div class="music-progress-bar" id="musicProgressBar"></div>
+        </div>
+        <button class="retry-btn" id="retryBtn" onclick="retryMusic()" style="display: none;">Thử lại</button>
+    </div>
+
     <!-- Controls Bar -->
     <div class="controls-bar">
         <div class="ping-status" id="pingStatus">
             <div class="ping-spinner"></div>
             <span id="pingText">Đang kiểm tra...</span>
+        </div>
+        
+        <div class="music-status" id="musicStatus">
+            <span class="music-status-icon">🎵</span>
+            <span class="music-status-text" id="musicStatusText">Sẵn sàng</span>
         </div>
         
         <div class="music-toggle-container">
