@@ -1,42 +1,106 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"/>
-  <title>Đếm Ngược Giao Thừa Tết Bính Ngọ 2026</title>
-  <link rel="stylesheet" href="style.css"/>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;600&family=Lobster&family=Bebas+Neue&display=swap" rel="stylesheet">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Countdown Tết Nguyên Đán</title>
+    <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&family=Be+Vietnam+Pro:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
 </head>
-<body id="body">
-  <canvas id="emoji-canvas"></canvas>
+<body>
+    <!-- Popup Container -->
+    <div id="popupOverlay" class="popup-overlay" onclick="closePopup()"></div>
+    <div id="popup" class="popup">
+        <div class="popup-icon" id="popupIcon">📢</div>
+        <div class="popup-content" id="popupContent">Thông báo</div>
+        <button class="popup-close" onclick="closePopup()">✕</button>
+    </div>
 
-  <div class="container">
-    <h1 class="title">CHÚC MỪNG NĂM MỚI<br>TẾT BÍNH NGỌ 2026</h1>
+    <!-- Ping Status -->
+    <div id="pingStatus" class="ping-status">
+        <div class="ping-spinner"></div>
+        <span id="pingText">Đang kiểm tra...</span>
+    </div>
+
+    <!-- YouTube Player ẩn -->
+    <div id="youtube-player" style="position: absolute; left: -9999px; width: 1px; height: 1px; opacity: 0; pointer-events: none;"></div>
     
-    <div class="countdown">
-      <div class="countdown-item"><span id="days">00</span><p>NGÀY</p></div>
-      <div class="countdown-item"><span id="hours">00</span><p>GIỜ</p></div>
-      <div class="countdown-item"><span id="minutes">00</span><p>PHÚT</p></div>
-      <div class="countdown-item"><span id="seconds">00</span><p>GIÂY</p></div>
+    <!-- Toggle Switch Nhạc -->
+    <div class="music-toggle-container">
+        <span class="toggle-label">Nhạc nền</span>
+        <label class="toggle-switch">
+            <input type="checkbox" id="musicToggle" onchange="toggleMusic()">
+            <span class="toggle-slider">
+                <span class="toggle-on">ON</span>
+                <span class="toggle-off">OFF</span>
+            </span>
+        </label>
     </div>
 
-    <p class="subtitle">Giao thừa 29 Tết - 00:00 rạng sáng 17/02/2026<br>(Mobile: Bấm nút nhạc 1 lần, chờ 2-3 giây nếu chưa phát)</p>
+    <div class="lantern left"></div>
+    <div class="lantern right"></div>
 
-    <div class="music-control">
-      <button id="musicToggle" class="btn-music">Bật Nhạc Tết ♫</button>
-      <div class="volume-control">
-        <label for="volumeSlider">Âm lượng: </label>
-        <input type="range" id="volumeSlider" min="0" max="100" value="100" step="1">
-      </div>
-      <button id="changeBgBtn" class="btn-change-bg">Đổi Nền 🌸</button>
+    <div class="container">
+        <div class="title-section">
+            <h1>Countdown Tết Nguyên Đán</h1>
+            <p class="subtitle">Được code bởi : Nguyễn Chí Dự</p>
+        </div>
+
+        <div class="realtime-clock">
+            <div class="clock-time" id="clockTime">00:00:00</div>
+            <div class="clock-date" id="clockDate">Đang tải...</div>
+        </div>
+
+        <div class="zodiac-display">
+            <span class="zodiac-icon" id="zodiacIcon">🐍</span>
+            <div class="zodiac-text" id="zodiacText">Năm Ất Tỵ</div>
+            <div class="zodiac-year" id="zodiacYear">Năm 2025</div>
+        </div>
+
+        <div class="countdown-wrapper">
+            <div class="year-display">
+                Còn <span id="daysOnly" class="highlight-days">...</span> ngày đến Tết Nguyên Đán <span id="targetYearNum">2025</span>
+            </div>
+            <div class="countdown" id="countdown">
+                <div class="time-box">
+                    <span class="number" id="days">00</span>
+                    <div class="label">Ngày</div>
+                </div>
+                <div class="time-box">
+                    <span class="number" id="hours">00</span>
+                    <div class="label">Giờ</div>
+                </div>
+                <div class="time-box">
+                    <span class="number" id="minutes">00</span>
+                    <div class="label">Phút</div>
+                </div>
+                <div class="time-box">
+                    <span class="number" id="seconds">00</span>
+                    <div class="label">Giây</div>
+                </div>
+            </div>
+        </div>
     </div>
-  </div>
 
-  <div id="youtube-player"></div>
+    <div class="celebration" id="celebration">
+        <h2>🎊 Chúc Mừng Năm Mới! 🎊</h2>
+        <p id="celebrationText">...</p>
+    </div>
 
-  <script src="https://www.youtube.com/iframe_api"></script>
-  <script src="script.js"></script>
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-content">
+            <div class="footer-line">Made in VN 🇻🇳</div>
+            <div class="footer-line">Made by : Nguyễn Chí Dự</div>
+            <div class="footer-line">© Bản quyền website thuộc về : Nguyễn Chí Dự</div>
+        </div>
+    </footer>
+
+    <!-- Emoji Container -->
+    <div id="emojiContainer" class="emoji-container"></div>
+
+    <!-- YouTube IFrame API -->
+    <script src="https://www.youtube.com/iframe_api"></script>
+    <script src="script.js"></script>
 </body>
 </html>
