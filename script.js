@@ -3,10 +3,13 @@ let player;
 let isPlaying = false;
 let isPlayerReady = false;
 let playerLoadingTimeout;
+let playerRetryCount = 0;
+const MAX_RETRIES = 3;
 let pingInterval;
 let storageInterval;
 let lastPingTime = 0;
 let isNetworkLag = false;
+let currentMusicSource = 'none'; // 'youtube', 'local', 'none'
 
 // Dữ liệu con giáp
 const zodiacAnimals = ["Tý", "Sửu", "Dần", "Mão", "Thìn", "Tỵ", "Ngọ", "Mùi", "Thân", "Dậu", "Tuất", "Hợi"];
@@ -78,6 +81,34 @@ function closePopup() {
         overlay.classList.remove('active');
         popup.style.animation = '';
     }, 300);
+}
+
+// ==================== MUSIC STATUS ====================
+function updateMusicStatus(status, text) {
+    const musicStatus = document.getElementById('musicStatus');
+    const musicStatusText = document.getElementById('musicStatusText');
+    const musicStatusIcon = musicStatus.querySelector('.music-status-icon');
+    
+    musicStatus.className = 'music-status ' + status;
+    musicStatusText.textContent = text;
+    
+    if (status === 'loading') {
+        musicStatusIcon.textContent = '⏳';
+    } else if (status === 'success') {
+        musicStatusIcon.textContent = '✅';
+    } else if (status === 'error') {
+        musicStatusIcon.textContent = '❌';
+    } else {
+        musicStatusIcon.textContent = '🎵';
+    }
+}
+
+function showMusicLoading(show) {
+    document.getElementById('musicLoading').style.display = show ? 'block' : 'none';
+}
+
+function showRetryButton(show) {
+    document.getElementById('retryBtn').style.display = show ? 'inline-block' : 'none';
 }
 
 // ==================== PING SYSTEM ====================
@@ -184,7 +215,8 @@ function initEmojiEffect() {
         if (e.target.closest('.music-toggle-container') || 
             e.target.closest('.popup') || 
             e.target.closest('.popup-close') ||
-            e.target.closest('.toggle-switch')) {
+            e.target.closest('.toggle-switch') ||
+            e.target.closest('.retry-btn')) {
             return;
         }
         
@@ -201,38 +233,55 @@ function initEmojiEffect() {
 
 // ==================== YOUTUBE MUSIC ====================
 function onYouTubeIframeAPIReady() {
+    // Timeout dài hơn cho mạng yếu (15 giây)
     playerLoadingTimeout = setTimeout(() => {
         if (!isPlayerReady) {
+            console.log('YouTube load timeout, chuyển sang local audio');
             isNetworkLag = true;
+            updateMusicStatus('error', 'YouTube lỗi');
+            // Tự động chuyển sang local
+            if (document.getElementById('musicToggle').checked) {
+                playLocalAudio();
+            }
         }
-    }, 5000);
+    }, 15000);
 
-    player = new YT.Player('youtube-player', {
-        height: '1',
-        width: '1',
-        videoId: 'fMskPmI4tp0',
-        playerVars: {
-            'autoplay': 0,
-            'controls': 0,
-            'disablekb': 1,
-            'fs': 0,
-            'modestbranding': 1,
-            'rel': 0,
-            'showinfo': 0,
-            'loop': 1,
-            'playlist': 'fMskPmI4tp0'
-        },
-        events: {
-            'onReady': onPlayerReady,
-            'onStateChange': onPlayerStateChange
-        }
-    });
+    try {
+        player = new YT.Player('youtube-player', {
+            height: '1',
+            width: '1',
+            videoId: 'fMskPmI4tp0',
+            playerVars: {
+                'autoplay': 0,
+                'controls': 0,
+                'disablekb': 1,
+                'fs': 0,
+                'modestbranding': 1,
+                'rel': 0,
+                'showinfo': 0,
+                'loop': 1,
+                'playlist': 'fMskPmI4tp0'
+            },
+            events: {
+                'onReady': onPlayerReady,
+                'onStateChange': onPlayerStateChange,
+                'onError': onPlayerError
+            }
+        });
+    } catch (e) {
+        console.error('YouTube API error:', e);
+        isNetworkLag = true;
+        updateMusicStatus('error', 'YouTube lỗi');
+    }
 }
 
 function onPlayerReady(event) {
     clearTimeout(playerLoadingTimeout);
     isPlayerReady = true;
     isNetworkLag = false;
+    currentMusicSource = 'youtube';
+    updateMusicStatus('success', 'YouTube OK');
+    console.log('YouTube Player ready');
 }
 
 function onPlayerStateChange(event) {
@@ -241,39 +290,130 @@ function onPlayerStateChange(event) {
     }
 }
 
+function onPlayerError(event) {
+    console.error('YouTube Player Error:', event.data);
+    isPlayerReady = false;
+    isNetworkLag = true;
+    updateMusicStatus('error', 'YouTube lỗi');
+    
+    // Tự động chuyển sang local nếu đang bật nhạc
+    if (isPlaying) {
+        showPopup("YouTube lỗi, chuyển sang nhạc dự phòng... 🎵", "🔄");
+        setTimeout(() => playLocalAudio(), 1000);
+    }
+}
+
+// ==================== LOCAL AUDIO ====================
+function playLocalAudio() {
+    const localAudio = document.getElementById('localAudio');
+    
+    updateMusicStatus('loading', 'Đang tải MP3...');
+    showMusicLoading(true);
+    
+    // Giả lập loading
+    let progress = 0;
+    const progressInterval = setInterval(() => {
+        progress += 10;
+        if (progress > 90) clearInterval(progressInterval);
+    }, 200);
+    
+    localAudio.play().then(() => {
+        clearInterval(progressInterval);
+        showMusicLoading(false);
+        currentMusicSource = 'local';
+        isPlaying = true;
+        updateMusicStatus('success', 'MP3 OK');
+        showPopup("🎵 Đang phát nhạc dự phòng!", "🎶");
+    }).catch(err => {
+        clearInterval(progressInterval);
+        showMusicLoading(false);
+        showRetryButton(true);
+        updateMusicStatus('error', 'MP3 lỗi');
+        showPopup("Không thể phát nhạc! Hãy thử lại... 😢", "❌");
+        console.error('Local audio error:', err);
+    });
+}
+
+function stopLocalAudio() {
+    const localAudio = document.getElementById('localAudio');
+    localAudio.pause();
+    localAudio.currentTime = 0;
+}
+
+// ==================== MUSIC CONTROL ====================
 function toggleMusic() {
     const toggle = document.getElementById('musicToggle');
     
-    if (!isPlayerReady && isNetworkLag) {
-        showPopup("Nhạc đang tải, có vẻ mạng bạn đang lag... 🐌", "⏳");
-        toggle.checked = false;
-        return;
+    if (toggle.checked) {
+        // Bật nhạc
+        if (!isPlayerReady && !isNetworkLag) {
+            // Đang load YouTube, đợi thêm
+            showMusicLoading(true);
+            updateMusicStatus('loading', 'Đang kết nối...');
+            
+            setTimeout(() => {
+                if (isPlayerReady) {
+                    playYouTube();
+                } else {
+                    // Timeout, chuyển local
+                    playLocalAudio();
+                }
+            }, 3000);
+        } else if (isPlayerReady) {
+            playYouTube();
+        } else {
+            // Đã biết lag, chuyển local luôn
+            playLocalAudio();
+        }
+    } else {
+        // Tắt nhạc
+        stopMusic();
     }
-    
-    if (!isPlayerReady) {
-        setTimeout(() => {
-            if (!isPlayerReady) {
-                isNetworkLag = true;
-                showPopup("Nhạc đang tải, có vẻ mạng bạn đang lag... 🐌", "⏳");
-                toggle.checked = false;
-            } else {
-                playMusic(toggle);
-            }
-        }, 500);
-        return;
-    }
-    
-    playMusic(toggle);
 }
 
-function playMusic(toggle) {
-    isPlaying = toggle.checked;
-
-    if (isPlaying) {
+function playYouTube() {
+    if (player && player.playVideo) {
         player.playVideo();
+        isPlaying = true;
+        currentMusicSource = 'youtube';
+        updateMusicStatus('success', 'YouTube OK');
         showPopup("🎵 Nhạc Tết đã bật!", "🎶");
     } else {
+        playLocalAudio();
+    }
+}
+
+function stopMusic() {
+    isPlaying = false;
+    
+    if (currentMusicSource === 'youtube' && player && player.pauseVideo) {
         player.pauseVideo();
+    } else if (currentMusicSource === 'local') {
+        stopLocalAudio();
+    }
+    
+    updateMusicStatus('', 'Sẵn sàng');
+    showMusicLoading(false);
+}
+
+function retryMusic() {
+    showRetryButton(false);
+    playerRetryCount++;
+    
+    if (playerRetryCount <= MAX_RETRIES) {
+        showPopup(`Thử lại lần ${playerRetryCount}/${MAX_RETRIES}...`, "🔄");
+        
+        // Thử reload YouTube
+        if (player && player.destroy) {
+            player.destroy();
+        }
+        
+        setTimeout(() => {
+            onYouTubeIframeAPIReady();
+        }, 2000);
+    } else {
+        showPopup("Đã thử nhiều lần, dùng nhạc MP3 nhé! 🎵", "🎶");
+        setTimeout(() => playLocalAudio(), 1000);
     }
 }
 
