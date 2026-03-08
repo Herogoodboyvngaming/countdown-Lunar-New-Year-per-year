@@ -20,6 +20,18 @@ body {
     padding-bottom: 80px;
 }
 
+/* Ẩn hoàn toàn YouTube Player */
+.hidden-player {
+    position: absolute;
+    width: 0;
+    height: 0;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    overflow: hidden;
+    z-index: -9999;
+}
+
 /* Popup System */
 .popup-overlay {
     display: none;
