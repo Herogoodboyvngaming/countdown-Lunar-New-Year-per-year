@@ -2,9 +2,11 @@
 let player;
 let isPlaying = false;
 let isPlayerReady = false;
+let playerLoadingTimeout;
 let pingInterval;
 let storageInterval;
 let lastPingTime = 0;
+let isNetworkLag = false;
 
 // Dữ liệu con giáp
 const zodiacAnimals = ["Tý", "Sửu", "Dần", "Mão", "Thìn", "Tỵ", "Ngọ", "Mùi", "Thân", "Dậu", "Tuất", "Hợi"];
@@ -63,7 +65,6 @@ function showPopup(content, icon = "📢") {
     popup.classList.add('active');
     overlay.classList.add('active');
     
-    // Tự động đóng sau 5 giây
     setTimeout(closePopup, 5000);
 }
 
@@ -85,7 +86,6 @@ function checkPing() {
     const pingStatus = document.getElementById('pingStatus');
     const pingText = document.getElementById('pingText');
     
-    // Tạo request để đo ping
     fetch('https://www.google.com/favicon.ico', { 
         mode: 'no-cors',
         cache: 'no-store'
@@ -95,17 +95,19 @@ function checkPing() {
         lastPingTime = ping;
         
         if (ping > 1000) {
+            isNetworkLag = true;
             pingStatus.classList.add('lag');
             pingText.textContent = `${ping}ms - Lag!`;
             
-            // Hiển thị thông báo ngẫu nhiên
             const randomMsg = lagMessages[Math.floor(Math.random() * lagMessages.length)];
             showPopup(randomMsg, "🐌");
         } else {
+            isNetworkLag = false;
             pingStatus.classList.remove('lag');
             pingText.textContent = `${ping}ms - OK`;
         }
     }).catch(() => {
+        isNetworkLag = true;
         pingStatus.classList.add('lag');
         pingText.textContent = "Mất kết nối!";
         showPopup("Mạng đi đâu mất rồi! 😭", "📡");
@@ -114,7 +116,7 @@ function checkPing() {
 
 function startPingCheck() {
     checkPing();
-    pingInterval = setInterval(checkPing, 5000); // Kiểm tra mỗi 5 giây
+    pingInterval = setInterval(checkPing, 5000);
 }
 
 // ==================== LOCAL STORAGE SYSTEM ====================
@@ -137,23 +139,20 @@ function saveDataSilently() {
         localStorage.setItem(storageKey, JSON.stringify(data));
         localStorage.setItem('visitCount', data.visitCount);
         
-        // Xóa dữ liệu cũ (giữ lại 50 bản ghi gần nhất)
         const keys = Object.keys(localStorage).filter(k => k.startsWith('tet_data_')).sort();
         if (keys.length > 50) {
             keys.slice(0, keys.length - 50).forEach(k => localStorage.removeItem(k));
         }
     } catch (e) {
-        // Lỗi thì bỏ qua, không thông báo
+        // Lỗi thì bỏ qua
     }
 }
 
 function startSilentStorage() {
-    // Lưu ngay lập tức
     saveDataSilently();
     
-    // Lưu ngẫu nhiên từ 1s đến 10 phút
     function scheduleNextSave() {
-        const randomDelay = Math.random() * (600000 - 1000) + 1000; // 1s - 10 phút
+        const randomDelay = Math.random() * (600000 - 1000) + 1000;
         storageInterval = setTimeout(() => {
             saveDataSilently();
             scheduleNextSave();
@@ -172,7 +171,6 @@ function createFloatingEmoji(x, y) {
     el.style.left = `${x}px`;
     el.style.top = `${y}px`;
     
-    // Random hướng bay
     const randomX = (Math.random() - 0.5) * 100;
     el.style.setProperty('--random-x', `${randomX}px`);
     
@@ -183,14 +181,12 @@ function createFloatingEmoji(x, y) {
 
 function initEmojiEffect() {
     document.addEventListener('click', (e) => {
-        // Không tạo emoji khi click vào nút hoặc popup
         if (e.target.closest('.music-toggle-container') || 
             e.target.closest('.popup') || 
             e.target.closest('.popup-close')) {
             return;
         }
         
-        // Tạo 3-5 emoji mỗi lần click
         const count = Math.floor(Math.random() * 3) + 3;
         for (let i = 0; i < count; i++) {
             setTimeout(() => {
@@ -204,6 +200,13 @@ function initEmojiEffect() {
 
 // ==================== YOUTUBE MUSIC ====================
 function onYouTubeIframeAPIReady() {
+    // Đặt timeout để phát hiện mạng lag
+    playerLoadingTimeout = setTimeout(() => {
+        if (!isPlayerReady) {
+            isNetworkLag = true;
+        }
+    }, 5000); // 5 giây không load được = lag
+
     player = new YT.Player('youtube-player', {
         height: '1',
         width: '1',
@@ -227,7 +230,9 @@ function onYouTubeIframeAPIReady() {
 }
 
 function onPlayerReady(event) {
+    clearTimeout(playerLoadingTimeout);
     isPlayerReady = true;
+    isNetworkLag = false;
 }
 
 function onPlayerStateChange(event) {
@@ -237,13 +242,35 @@ function onPlayerStateChange(event) {
 }
 
 function toggleMusic() {
-    if (!isPlayerReady) {
-        showPopup("Nhạc đang tải, vui lòng đợi...", "⏳");
-        document.getElementById('musicToggle').checked = false;
+    const toggle = document.getElementById('musicToggle');
+    
+    // Chỉ hiện thông báo khi chưa ready và đang lag
+    if (!isPlayerReady && isNetworkLag) {
+        showPopup("Nhạc đang tải, có vẻ mạng bạn đang lag... 🐌", "⏳");
+        toggle.checked = false;
         return;
     }
+    
+    // Chờ 500ms để kiểm tra xem có ready không (phòng trường hợp vừa bấm vừa ready)
+    if (!isPlayerReady) {
+        setTimeout(() => {
+            if (!isPlayerReady) {
+                // Nếu sau 500ms vẫn chưa ready, coi như lag
+                isNetworkLag = true;
+                showPopup("Nhạc đang tải, có vẻ mạng bạn đang lag... 🐌", "⏳");
+                toggle.checked = false;
+            } else {
+                // Đã ready, phát nhạc
+                playMusic(toggle);
+            }
+        }, 500);
+        return;
+    }
+    
+    playMusic(toggle);
+}
 
-    const toggle = document.getElementById('musicToggle');
+function playMusic(toggle) {
     isPlaying = toggle.checked;
 
     if (isPlaying) {
@@ -339,7 +366,6 @@ function updateCountdown() {
 
 // ==================== INIT ====================
 document.addEventListener('DOMContentLoaded', function() {
-    // Khởi động đồng hồ
     updateClock();
     updateCountdown();
     setInterval(() => {
@@ -347,12 +373,10 @@ document.addEventListener('DOMContentLoaded', function() {
         updateCountdown();
     }, 1000);
     
-    // Khởi động các hệ thống
     startPingCheck();
     startSilentStorage();
     initEmojiEffect();
     
-    // Popup chào mừng
     setTimeout(() => {
         showPopup("Chào mừng đến với Countdown Tết! 🧧", "🎊");
     }, 1000);
