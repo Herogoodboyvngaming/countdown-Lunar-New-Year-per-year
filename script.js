@@ -183,7 +183,8 @@ function initEmojiEffect() {
     document.addEventListener('click', (e) => {
         if (e.target.closest('.music-toggle-container') || 
             e.target.closest('.popup') || 
-            e.target.closest('.popup-close')) {
+            e.target.closest('.popup-close') ||
+            e.target.closest('.toggle-switch')) {
             return;
         }
         
@@ -200,12 +201,11 @@ function initEmojiEffect() {
 
 // ==================== YOUTUBE MUSIC ====================
 function onYouTubeIframeAPIReady() {
-    // Đặt timeout để phát hiện mạng lag
     playerLoadingTimeout = setTimeout(() => {
         if (!isPlayerReady) {
             isNetworkLag = true;
         }
-    }, 5000); // 5 giây không load được = lag
+    }, 5000);
 
     player = new YT.Player('youtube-player', {
         height: '1',
@@ -244,23 +244,19 @@ function onPlayerStateChange(event) {
 function toggleMusic() {
     const toggle = document.getElementById('musicToggle');
     
-    // Chỉ hiện thông báo khi chưa ready và đang lag
     if (!isPlayerReady && isNetworkLag) {
         showPopup("Nhạc đang tải, có vẻ mạng bạn đang lag... 🐌", "⏳");
         toggle.checked = false;
         return;
     }
     
-    // Chờ 500ms để kiểm tra xem có ready không (phòng trường hợp vừa bấm vừa ready)
     if (!isPlayerReady) {
         setTimeout(() => {
             if (!isPlayerReady) {
-                // Nếu sau 500ms vẫn chưa ready, coi như lag
                 isNetworkLag = true;
                 showPopup("Nhạc đang tải, có vẻ mạng bạn đang lag... 🐌", "⏳");
                 toggle.checked = false;
             } else {
-                // Đã ready, phát nhạc
                 playMusic(toggle);
             }
         }, 500);
